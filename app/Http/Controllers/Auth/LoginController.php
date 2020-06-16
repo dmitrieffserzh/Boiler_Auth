@@ -2,12 +2,14 @@
 
 namespace App\Http\Controllers\Auth;
 
+use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Cache;
+use Illuminate\Support\Facades\Session;
 use App\Http\Controllers\Controller;
-use App\Providers\RouteServiceProvider;
 use Illuminate\Foundation\Auth\AuthenticatesUsers;
 
-class LoginController extends Controller
-{
+class LoginController extends Controller {
     /*
     |--------------------------------------------------------------------------
     | Login Controller
@@ -21,20 +23,26 @@ class LoginController extends Controller
 
     use AuthenticatesUsers;
 
-    /**
-     * Where to redirect users after login.
-     *
-     * @var string
-     */
-    protected $redirectTo = RouteServiceProvider::HOME;
+    protected $redirectTo = '/';
 
-    /**
-     * Create a new controller instance.
-     *
-     * @return void
-     */
-    public function __construct()
-    {
+    public function __construct() {
         $this->middleware('guest')->except('logout');
+    }
+
+
+    public function showLoginForm (Request $request) {
+        if($request->ajax() && $request->method('GET')) {
+            return view('auth.ajax_form');
+        } else {
+            return view('auth.login');
+        }
+    }
+
+
+    public function logout() {
+        Cache::forget( 'user-is-online-' . Auth::id() );
+        Auth::logout();
+        Session::flush();
+        return redirect()->back();
     }
 }
