@@ -21,7 +21,6 @@
         <form id="import-form" method="POST" action="{{ route('modules.TNParse.upload') }}"
               enctype="multipart/form-data">
             @csrf
-
             <div class="progress" style="height: 30px;">
                 <div class="progress-bar" role="progressbar" style="width: 0%;" aria-valuenow="0" aria-valuemin="0"
                      aria-valuemax="100"></div>
