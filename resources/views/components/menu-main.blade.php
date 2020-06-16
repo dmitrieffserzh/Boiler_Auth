@@ -21,7 +21,7 @@
             </a>
         </li>
         <li class="menu-main__item">
-            <a href="#" class="menu-main__link">
+            <a href="{{ route('modules.TNParse.index') }}" class="menu-main__link">
                 @lang('menu.services')
             </a>
         </li>
