@@ -9,8 +9,12 @@
 namespace App\Http\Controllers\Modules;
 
 use App\Http\Controllers\Controller;
+use App\Models\Modules\TNParse\TNParseGroup;
+use App\Models\Modules\TNParse\TNParseSection;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 use ZipArchive;
+use Dotenv\Exception\ValidationException;
 
 class TNParseController extends Controller
 {
@@ -30,12 +34,12 @@ class TNParseController extends Controller
 
             if ($request->hasFile('file')) {
                 // TODO
-                // VALIDATE ZIP
+                // VALIDATE ZIP FILE
                 $validator = $request->validate([
                     'file' => 'required|mimes:zip,gzip'
                 ]);
                 /*
-                return "<div>Ошибка! Не разрешенный тип файла!<br>Для загрузки разрешены только Zip-файлы!</div>";
+                    return "<div>Ошибка! Не разрешенный тип файла!<br>Для загрузки разрешены только Zip-файлы!</div>";
                 */
 
                 echo $progress['success'][] = "<div>Архив загружен...</div>";
@@ -63,73 +67,84 @@ class TNParseController extends Controller
                 if (empty($file_list))
                     echo $progress['error'][] = "<div>Ошибка! Не удалось найти файлы!</div>";
 
-                foreach ($file_list as $file) {
-                    $handle = fopen($file, 'r');
-                    $result_file = array();
-                    $counter = 0;
-                    while (($data = fgetcsv($handle, '', '|')) !== FALSE) {
-                        $counter++;
-                        if ($counter == 1) {
-                            continue;
-                        }
+                if (count($file_list) != 4)
+                    echo $progress['error'][] = "<div>Ошибка! В архиве недостаточно файлов!</div>";
 
-                        foreach ($data as $key => $value) {
-                            if (mb_detect_encoding($value, 'auto') != 'UTF-8') {
-                                $data[$key] = iconv('cp866', 'UTF-8', $value);
-                            }
-                        }
 
-                        echo "<strong style='color: #83a6f7;'>" . $data[0] . "</strong>   <strong>" . $data[1] . "</strong>";
-                        echo "<p style='color: #a3a3a5;border-bottom: 1px Dashed #e6e6e6;padding: 0 0 1rem;'>" . $data[2] . $data[3] . "</p>";
-                        array_pop($data);
-                        $result_file[] = $data;
+                // 1 FILE
+                $handle = fopen($file_list[0], 'r');
+
+                fgetcsv($handle, '', '|');
+                while (($data = fgetcsv($handle, '', '|')) !== FALSE) {
+
+                    array_pop($data);
+                    foreach ($data as $key => $value) {
+                        if (mb_detect_encoding($value) != 'UTF-8') {
+                            $data[$key] = iconv('cp866', 'UTF-8', $value);
+                        }
                     }
 
-                    fclose($handle);
+                    DB::beginTransaction();
+
+                    try {
+                        $section = new TNParseSection();
+                        $section->section = (int)$data[0];
+                        $section->name = $data[1];
+                        $section->note = $data[2];
+                        $section->start_date = $data[3];
+                        $section->end_date = $data[4] ? $data[4] : '';
+                        $section->save();
+
+                    } catch (ValidationException $e) {
+                        DB::rollback();
+                        echo $progress['error'][] = "<div>Ошибка! Не удалось выполнить транзакцию!</div>";
+                    }
+
+                }
+
+                fclose($handle);
+
+
+                // 2 FILE
+                $test = TNParseSection::all();
+
+
+                $handle = fopen($file_list[1], 'r');
+
+                fgetcsv($handle, '', '|');
+                while (($data = fgetcsv($handle, '', '|')) !== FALSE) {
+
+                    array_pop($data);
+                    foreach ($data as $key => $value) {
+                        if (mb_detect_encoding($value) != 'UTF-8') {
+                            $data[$key] = iconv('cp866', 'UTF-8', $value);
+                        }
+                    }
+
+                    try {
+                        $group = new TNParseGroup();
+                        $group->section = (int)$data[0];
+                        $group->name = $data[1];
+                        $group->note = $data[2];
+                        $group->start_date = $data[3];
+                        $group->end_date = $data[4] ? $data[4] : '';
+                        $group->save();
+
+
+                    } catch (ValidationException $e) {
+                        DB::rollback();
+                        echo $progress['error'][] = "<div>Ошибка! Не удалось выполнить транзакцию!</div>";
+                    }
+
                 }
 
 
-                // dd($file_list);
-
-                /*
-
-                                $handle = fopen($file, 'r');
-                                $result_file_1 = array();
-                                $counter = 0;
-                                while (($data = fgetcsv($handle, '', '|')) !== FALSE) {
-                                    $counter++;
-                                    if ($counter == 1) {
-                                        continue;
-                                    }
-
-                                    foreach ($data as $key => $value) {
-                                        if (mb_detect_encoding($value, 'auto') != 'UTF-8') {
-                                            $data[$key] = iconv('cp866', 'UTF-8', $value);
-                                        }
-                                    }
-
-                                    echo "<strong style='color: #83a6f7;'>" . $data[0] . "</strong>   <strong>" . $data[1] . "</strong>";
-                                    echo "<p style='color: #a3a3a5;border-bottom: 1px Dashed #e6e6e6;padding: 0 0 1rem;'>" . $data[2] . $data[3] . "</p>";
-                                    array_pop($data);
-                                    $result_file_1[] = $data;
-                                }
-
-                                fclose($handle);
-                                dd($result_file_1);
-
-
-
-                            }
-
-
-                */
-
-
-            } else {
-                abort(404);
             }
 
-        }
-    }
 
+        } else {
+            abort(404);
+        }
+
+    }
 }
