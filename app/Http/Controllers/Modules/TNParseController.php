@@ -10,6 +10,7 @@ namespace App\Http\Controllers\Modules;
 
 use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
+use ZipArchive;
 
 class TNParseController extends Controller
 {
@@ -24,43 +25,111 @@ class TNParseController extends Controller
     {
         if ($request->ajax() && $request->isMethod('post')) {
 
+
+            $progress = [];
+
             if ($request->hasFile('file')) {
+                // TODO
+                // VALIDATE ZIP
+                $validator = $request->validate([
+                    'file' => 'required|mimes:zip,gzip'
+                ]);
+                /*
+                return "<div>Ошибка! Не разрешенный тип файла!<br>Для загрузки разрешены только Zip-файлы!</div>";
+                */
 
-                $file1 = $request->file('file_1');
-                $file2 = $request->file('file_2');
-                $file3 = $request->file('file_3');
-                $file4 = $request->file('file_4');
-                //$file_puth = $file->move(public_path('uploads'), time() . '_' . $file->getClientOriginalName());
+                echo $progress['success'][] = "<div>Архив загружен...</div>";
 
-                $handle = fopen($file1, 'r');
-                $result_file_1 = array();
-                $counter = 0;
-                while (($data = fgetcsv($handle, '', '|')) !== FALSE) {
-                    $counter++;
-                    if ($counter == 1) {
-                        continue;
-                    }
+                $file = $request->file('file');
+                $file_puth = $file->move(public_path('uploads/modules/TNParse'), $file->getClientOriginalName());
 
-                    foreach ($data as $key => $value) {
-                        if (mb_detect_encoding($value, 'auto') != 'UTF-8') {
-                            $data[$key] = iconv('cp866', 'UTF-8', $value);
-                        }
-                    }
+                $file_dir = $file_puth->getPath() . '/' . date('dmY_His') . '_' . str_replace('.ZIP', '', $file_puth->getBasename());
 
-                    echo "<strong style='color: #83a6f7;'>" . $data[0] . "</strong>   <strong>" . $data[1] . "</strong>";
-                    echo "<p style='color: #a3a3a5;border-bottom: 1px Dashed #e6e6e6;padding: 0 0 1rem;'>" . $data[2] . $data[3] . "</p>";
-                    array_pop($data);
-                    $result_file_1[] = $data;
+
+                $zip = new ZipArchive;
+                $zip->open($file_puth->getLinkTarget());
+                $zip->extractTo($file_dir);
+                if ($zip->close() == true) {
+                    echo $progress['success'][] = "<div>Архив распакован...</div>";
+                } else {
+                    return $progress['error'][] = "<div>Ошибка! Не удалось распаковать архив!</div>";
                 }
 
-                fclose($handle);
-                dd($result_file_1);
+                if (unlink($file_puth)) {
+                    echo $progress['success'][] = "<div>Архив удален... </div>";
+                };
+
+                $file_list = glob($file_dir . "/\*.[tT][xX][tT]");
+                if (empty($file_list))
+                    echo $progress['error'][] = "<div>Ошибка! Не удалось найти файлы!</div>";
+
+                foreach ($file_list as $file) {
+                    $handle = fopen($file, 'r');
+                    $result_file = array();
+                    $counter = 0;
+                    while (($data = fgetcsv($handle, '', '|')) !== FALSE) {
+                        $counter++;
+                        if ($counter == 1) {
+                            continue;
+                        }
+
+                        foreach ($data as $key => $value) {
+                            if (mb_detect_encoding($value, 'auto') != 'UTF-8') {
+                                $data[$key] = iconv('cp866', 'UTF-8', $value);
+                            }
+                        }
+
+                        echo "<strong style='color: #83a6f7;'>" . $data[0] . "</strong>   <strong>" . $data[1] . "</strong>";
+                        echo "<p style='color: #a3a3a5;border-bottom: 1px Dashed #e6e6e6;padding: 0 0 1rem;'>" . $data[2] . $data[3] . "</p>";
+                        array_pop($data);
+                        $result_file[] = $data;
+                    }
+
+                    fclose($handle);
+                }
+
+
+                // dd($file_list);
+
+                /*
+
+                                $handle = fopen($file, 'r');
+                                $result_file_1 = array();
+                                $counter = 0;
+                                while (($data = fgetcsv($handle, '', '|')) !== FALSE) {
+                                    $counter++;
+                                    if ($counter == 1) {
+                                        continue;
+                                    }
+
+                                    foreach ($data as $key => $value) {
+                                        if (mb_detect_encoding($value, 'auto') != 'UTF-8') {
+                                            $data[$key] = iconv('cp866', 'UTF-8', $value);
+                                        }
+                                    }
+
+                                    echo "<strong style='color: #83a6f7;'>" . $data[0] . "</strong>   <strong>" . $data[1] . "</strong>";
+                                    echo "<p style='color: #a3a3a5;border-bottom: 1px Dashed #e6e6e6;padding: 0 0 1rem;'>" . $data[2] . $data[3] . "</p>";
+                                    array_pop($data);
+                                    $result_file_1[] = $data;
+                                }
+
+                                fclose($handle);
+                                dd($result_file_1);
+
+
+
+                            }
+
+
+                */
+
+
+            } else {
+                abort(404);
             }
 
-        } else {
-            abort(404);
         }
-
     }
 
 }
