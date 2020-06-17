@@ -106,7 +106,7 @@ class TNParseController extends Controller
 
 
                 // 2 FILE
-                $test = TNParseSection::all();
+                $allsection = TNParseSection::all();
 
 
                 $handle = fopen($file_list[1], 'r');
@@ -122,14 +122,24 @@ class TNParseController extends Controller
                     }
 
                     try {
-                        $group = new TNParseGroup();
-                        $group->section = (int)$data[0];
-                        $group->name = $data[1];
-                        $group->note = $data[2];
-                        $group->start_date = $data[3];
-                        $group->end_date = $data[4] ? $data[4] : '';
-                        $group->save();
+                        foreach ($allsection as $item) {
+                            if(empty($item['end_date']))
+                                dd($item['end_date']);
 
+                            if ($item['section'] == $data[0] && $item['start_date'] == $data[4] && $item['end_date'] == $data[5]) {
+                                $group = new TNParseGroup();
+                                $group->section_id = (int)$item['id'];
+                                $group->group = (int)$data[1];
+                                $group->name = $data[2];
+                                $group->note = $data[3];
+                                //dd($group);
+                                $group->save();
+
+                                break;
+                            }
+
+                        }
+                        DB::commit();
 
                     } catch (ValidationException $e) {
                         DB::rollback();

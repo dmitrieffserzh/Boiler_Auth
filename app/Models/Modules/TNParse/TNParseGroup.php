@@ -7,7 +7,7 @@ use Illuminate\Database\Eloquent\Model;
 class TNParseGroup extends Model
 {
 
-    protected $table = 'module__t_n_parse_group';
+    protected $table = 'module__t_n_parse_groups';
 
     protected $fillable = [
         'group',
