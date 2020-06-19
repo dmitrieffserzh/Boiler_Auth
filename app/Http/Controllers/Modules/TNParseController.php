@@ -21,34 +21,10 @@ use Dotenv\Exception\ValidationException;
 class TNParseController extends Controller
 {
 
-    public function index()
+    public function index(Request $request)
     {
         return view('modules.TNParse.index');
     }
-
-
-    public function search(Request $request) {
-
-
-
-        if ($request->ajax() && $request->isMethod('post')) {
-
-            $q =$request->get('search');
-dd($q);
-            $result = TNParseSubProduct::where('name' ,'=', $q)->first();
-            //dd($result);
-
-
-
-
-
-        return  $result; //response()->json($result);
-        }
-
-
-
-    }
-
 
 
     public function upload(Request $request)

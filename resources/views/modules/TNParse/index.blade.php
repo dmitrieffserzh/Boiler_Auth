@@ -20,10 +20,10 @@
         <br>
         <br>
         <br>
-        <form id="search" method="POST" action="{{ route('modules.TNParse.search') }}" enctype="multipart/form-data">
-            @csrf
+        <form id="search" action="{{ route('search') }}" enctype="multipart/form-data">
             <div class="form-group">
-                <input type="text" name="search" class="form-control">
+                <input type="text" id="search_input" name="search" class="form-control">
+                <input type="submit">
             </div>
         </form>
         <div id="rrres"></div>
@@ -50,7 +50,7 @@
         <br>
         <br>
         <br>
-
+<!--
 
         <div class="mt-5 p-3 bg-light border border-primary rounded">
             <form id="import-form" method="POST" action="{{ route('modules.TNParse.upload') }}"
@@ -72,7 +72,7 @@
         </div>
 
         <div id="result" class="alert alert-primary mt-2 d-none" role="alert"></div>
-
+-->
 
     </div>
 @endsection
@@ -82,29 +82,30 @@
 @push('scripts')
     <script>
 
-
-        $(function () {
-            $('form#search').on('keyup', function () {
-                var data = $('form#search input').val();
-                data = {"_token": "{{ csrf_token() }}"}
-                console.log(data);
+        let timer = null;
+        $('#search_input').on('keyup', function () {
+            let input = $(this);
+            clearTimeout(timer);
+            timer = setTimeout(function () {
                 $.ajax({
+                    headers: {'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')},
+                    data: input,
                     type: 'POST',
-                    url: '{{ route('modules.TNParse.search') }}',
-                    data: data,
-                    async: true,
-                    cache: false,
-                    contentType: false,
-                    processData: false,
-                    success: function (returndata) {
-                        console.log(returndata);
+                    url: '{{ route('search') }}',
+                    success: function (result) {
+                        //$('#rrres').html(result);
+
+                        $.each(JSON.parse(result), function (index, value) {
+                            $('#rrres').append('<p style="border: 1px Solid #f5f5f8;">'+value.name+'</p>');
+                            console.log(value);
+                        });
                     }
                 });
-            })
+            }, 500);
         });
 
 
-        //////////////////////
+        /*
         $(function () {
             $('form#import-form').on('change', function () {
                 let inputFile = $('input[type=file]')[0].files[0];
@@ -156,5 +157,6 @@
                 }
             });
         });
+        */
     </script>
 @endpush
