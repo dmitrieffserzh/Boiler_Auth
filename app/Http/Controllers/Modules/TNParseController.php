@@ -10,6 +10,8 @@ namespace App\Http\Controllers\Modules;
 
 use App\Http\Controllers\Controller;
 use App\Models\Modules\TNParse\TNParseGroup;
+use App\Models\Modules\TNParse\TNParseProduct;
+use App\Models\Modules\TNParse\TNParseSubProduct;
 use App\Models\Modules\TNParse\TNParseSection;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -23,6 +25,30 @@ class TNParseController extends Controller
     {
         return view('modules.TNParse.index');
     }
+
+
+    public function search(Request $request) {
+
+
+
+        if ($request->ajax() && $request->isMethod('post')) {
+
+            $q =$request->get('search');
+dd($q);
+            $result = TNParseSubProduct::where('name' ,'=', $q)->first();
+            //dd($result);
+
+
+
+
+
+        return  $result; //response()->json($result);
+        }
+
+
+
+    }
+
 
 
     public function upload(Request $request)
@@ -71,6 +97,9 @@ class TNParseController extends Controller
                     echo $progress['error'][] = "<div>Ошибка! В архиве недостаточно файлов!</div>";
 
 
+                // OPEN TRANSACTION
+                DB::beginTransaction();
+
                 // 1 FILE
                 $handle = fopen($file_list[0], 'r');
 
@@ -83,8 +112,6 @@ class TNParseController extends Controller
                             $data[$key] = iconv('cp866', 'UTF-8', $value);
                         }
                     }
-
-                    DB::beginTransaction();
 
                     try {
                         $section = new TNParseSection();
@@ -99,21 +126,15 @@ class TNParseController extends Controller
                         DB::rollback();
                         echo $progress['error'][] = "<div>Ошибка! Не удалось выполнить транзакцию!</div>";
                     }
-
                 }
-
                 fclose($handle);
 
 
                 // 2 FILE
-                $allsection = TNParseSection::all();
-
-
                 $handle = fopen($file_list[1], 'r');
 
                 fgetcsv($handle, '', '|');
                 while (($data = fgetcsv($handle, '', '|')) !== FALSE) {
-                    $flag = false;
                     array_pop($data);
                     foreach ($data as $key => $value) {
                         if (mb_detect_encoding($value) != 'UTF-8') {
@@ -122,39 +143,88 @@ class TNParseController extends Controller
                     }
 
                     try {
-
-                        foreach ($allsection as $item) {
-
-
-                            if ($item['section'] == $data[0] && $item['start_date'] == $data[4] && $item['end_date'] == ($data[5] ? $data[5] : '')) {
-                                $group = new TNParseGroup();
-                                $group->section_id = (int)$item['id'];
-                                $group->group = (int)$data[1];
-                                $group->name = $data[2];
-                                $group->note = $data[3];
-                                //dd($group);
-                                $group->save();
-                                $flag = true;
-                                break;
-                            }
-
-                        }
-//                        DB::commit();
+                        $group = new TNParseGroup();
+                        $group->section = (int)$data[0];
+                        $group->group = (int)$data[1];
+                        $group->name = $data[2];
+                        $group->note = $data[3];
+                        $group->start_date = $data[4];
+                        $group->end_date = $data[5] ? $data[5] : null;
+                        $group->save();
 
                     } catch (ValidationException $e) {
                         DB::rollback();
                         echo $progress['error'][] = "<div>Ошибка! Не удалось выполнить транзакцию!</div>";
                     }
-                    if($flag==false) dd($data);
                 }
+                fclose($handle);
 
 
+                // 3 FILE
+                $handle = fopen($file_list[2], 'r');
+
+                fgetcsv($handle, '', '|');
+                while (($data = fgetcsv($handle, '', '|')) !== FALSE) {
+                    array_pop($data);
+                    foreach ($data as $key => $value) {
+                        if (mb_detect_encoding($value) != 'UTF-8') {
+                            $data[$key] = iconv('cp866', 'UTF-8', $value);
+                        }
+                    }
+
+                    try {
+                        $product = new TNParseProduct();
+                        $product->group = (int)$data[0];
+                        $product->product = $data[1];
+                        $product->name = $data[2];
+                        $product->start_date = $data[3];
+                        $product->end_date = $data[4] ? $data[4] : null;
+                        $product->save();
+
+                    } catch (ValidationException $e) {
+                        DB::rollback();
+                        echo $progress['error'][] = "<div>Ошибка! Не удалось выполнить транзакцию!</div>";
+                    }
+                }
+                fclose($handle);
+
+
+                // 4 FILE
+                $handle = fopen($file_list[3], 'r');
+
+                fgetcsv($handle, '', '|');
+                while (($data = fgetcsv($handle, '', '|')) !== FALSE) {
+                    array_pop($data);
+                    foreach ($data as $key => $value) {
+                        if (mb_detect_encoding($value) != 'UTF-8') {
+                            $data[$key] = iconv('cp866', 'UTF-8', $value);
+                        }
+                    }
+
+                    try {
+                        $sub_product = new TNParseSubProduct();
+                        $sub_product->group = (int)$data[0];
+                        $sub_product->product = $data[1];
+                        $sub_product->sub_product = $data[2];
+                        $sub_product->name = $data[3];
+                        $sub_product->start_date = $data[4];
+                        $sub_product->end_date = $data[5] ? $data[5] : null;
+                        $sub_product->save();
+
+                    } catch (ValidationException $e) {
+                        DB::rollback();
+                        echo $progress['error'][] = "<div>Ошибка! Не удалось выполнить транзакцию!</div>";
+                    }
+                }
+                fclose($handle);
+
+                DB::commit();
+
+                echo $progress['success'][] = "<div>Операция выполнена успешно...</div>";
             }
-
 
         } else {
             abort(404);
         }
-
     }
 }

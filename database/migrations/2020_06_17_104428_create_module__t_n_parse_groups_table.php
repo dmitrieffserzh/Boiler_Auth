@@ -21,7 +21,6 @@ class CreateModuleTNParseGroupsTable extends Migration
             $table->text('note');
             $table->date('start_date')->nullable()->default(null);
             $table->date('end_date')->nullable()->default(null);
-            $table->integer('section_id')->unsigned();
         });
     }
 

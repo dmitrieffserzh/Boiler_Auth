@@ -6,14 +6,15 @@ use Illuminate\Database\Eloquent\Model;
 
 class TNParseGroup extends Model
 {
-
     protected $table = 'module__t_n_parse_groups';
 
     protected $fillable = [
+        'section',
         'group',
         'name',
         'note',
-        'section_id'
+        'start_date',
+        'end_date'
     ];
 
     public $timestamps = false;

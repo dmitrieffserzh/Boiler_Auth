@@ -15,6 +15,42 @@
             </div>
         @endif
 
+        <br>
+        <br>
+        <br>
+        <br>
+        <br>
+        <form id="search" method="POST" action="{{ route('modules.TNParse.search') }}" enctype="multipart/form-data">
+            @csrf
+            <div class="form-group">
+                <input type="text" name="search" class="form-control">
+            </div>
+        </form>
+        <div id="rrres"></div>
+
+        <br>
+        <br>
+        <br>
+        <br>
+        <br>
+        <br>
+        <br>
+        <br>
+        <br>
+        <br>
+        <br>
+        <br>
+        <br>
+        <br>
+        <br>
+        <br>
+        <br>
+        <br>
+        <br>
+        <br>
+        <br>
+        <br>
+
 
         <div class="mt-5 p-3 bg-light border border-primary rounded">
             <form id="import-form" method="POST" action="{{ route('modules.TNParse.upload') }}"
@@ -36,6 +72,8 @@
         </div>
 
         <div id="result" class="alert alert-primary mt-2 d-none" role="alert"></div>
+
+
     </div>
 @endsection
 
@@ -44,6 +82,29 @@
 @push('scripts')
     <script>
 
+
+        $(function () {
+            $('form#search').on('keyup', function () {
+                var data = $('form#search input').val();
+                data = {"_token": "{{ csrf_token() }}"}
+                console.log(data);
+                $.ajax({
+                    type: 'POST',
+                    url: '{{ route('modules.TNParse.search') }}',
+                    data: data,
+                    async: true,
+                    cache: false,
+                    contentType: false,
+                    processData: false,
+                    success: function (returndata) {
+                        console.log(returndata);
+                    }
+                });
+            })
+        });
+
+
+        //////////////////////
         $(function () {
             $('form#import-form').on('change', function () {
                 let inputFile = $('input[type=file]')[0].files[0];
