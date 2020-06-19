@@ -29,7 +29,7 @@ class TNParseController extends Controller
     {
         if ($request->ajax() && $request->isMethod('post')) {
 
-
+            ini_set('max_execution_time', 300);
             $progress = [];
 
             if ($request->hasFile('file')) {
@@ -92,7 +92,7 @@ class TNParseController extends Controller
                         $section->name = $data[1];
                         $section->note = $data[2];
                         $section->start_date = $data[3];
-                        $section->end_date = $data[4] ? $data[4] : '';
+                        $section->end_date = $data[4] ? $data[4] : null;
                         $section->save();
 
                     } catch (ValidationException $e) {
@@ -113,7 +113,7 @@ class TNParseController extends Controller
 
                 fgetcsv($handle, '', '|');
                 while (($data = fgetcsv($handle, '', '|')) !== FALSE) {
-
+                    $flag = false;
                     array_pop($data);
                     foreach ($data as $key => $value) {
                         if (mb_detect_encoding($value) != 'UTF-8') {
@@ -122,11 +122,11 @@ class TNParseController extends Controller
                     }
 
                     try {
-                        foreach ($allsection as $item) {
-                            if(empty($item['end_date']))
-                                dd($item['end_date']);
 
-                            if ($item['section'] == $data[0] && $item['start_date'] == $data[4] && $item['end_date'] == $data[5]) {
+                        foreach ($allsection as $item) {
+
+
+                            if ($item['section'] == $data[0] && $item['start_date'] == $data[4] && $item['end_date'] == ($data[5] ? $data[5] : '')) {
                                 $group = new TNParseGroup();
                                 $group->section_id = (int)$item['id'];
                                 $group->group = (int)$data[1];
@@ -134,18 +134,18 @@ class TNParseController extends Controller
                                 $group->note = $data[3];
                                 //dd($group);
                                 $group->save();
-
+                                $flag = true;
                                 break;
                             }
 
                         }
-                        DB::commit();
+//                        DB::commit();
 
                     } catch (ValidationException $e) {
                         DB::rollback();
                         echo $progress['error'][] = "<div>Ошибка! Не удалось выполнить транзакцию!</div>";
                     }
-
+                    if($flag==false) dd($data);
                 }
 
 

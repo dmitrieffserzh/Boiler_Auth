@@ -15,9 +15,12 @@ class CreateModuleTNParseGroupsTable extends Migration
     {
         Schema::create('module__t_n_parse_groups', function (Blueprint $table) {
             $table->id();
+            $table->integer('section')->unsigned();
             $table->integer('group')->unsigned();
             $table->string('name');
             $table->text('note');
+            $table->date('start_date')->nullable()->default(null);
+            $table->date('end_date')->nullable()->default(null);
             $table->integer('section_id')->unsigned();
         });
     }

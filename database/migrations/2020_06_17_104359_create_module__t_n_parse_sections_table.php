@@ -18,8 +18,8 @@ class CreateModuleTNParseSectionsTable extends Migration
             $table->integer('section')->unsigned();
             $table->string('name');
             $table->text('note');
-            $table->date('start_date');
-            $table->date('end_date');
+            $table->date('start_date')->nullable()->default(null);
+            $table->date('end_date')->nullable()->default(null);
         });
     }
 

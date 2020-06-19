@@ -15,8 +15,11 @@ class CreateModuleTNParseProdutsTable extends Migration
     {
         Schema::create('module__t_n_parse_produts', function (Blueprint $table) {
             $table->id();
+            $table->integer('group')->unsigned();
             $table->integer('product')->unsigned();
             $table->string('name');
+            $table->date('start_date')->nullable()->default(null);
+            $table->date('end_date')->nullable()->default(null);
             $table->integer('group_id')->unsigned();
         });
     }
